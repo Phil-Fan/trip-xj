@@ -50,7 +50,7 @@ const WAYPOINTS: Record<string, [number, number]> = {
   果子沟: [81.167568, 44.459601],
   霍城: [80.872, 44.053],
   伊宁市: [81.277715, 43.908021],
-  薰衣草园: [81.556004, 43.876046],
+  薰衣草园: [80.900097, 44.276581],
   六星街: [81.310102, 43.932803],
   昭苏县: [81.134, 43.157],
   特克斯: [81.837, 43.217],
@@ -103,7 +103,7 @@ function rgbToHex(r: number, g: number, b: number): string {
     .join("")}`;
 }
 
-function mixColors(a: string, b: string, t: number): string {
+export function mixColors(a: string, b: string, t: number): string {
   const ca = hexToRgb(a);
   const cb = hexToRgb(b);
   return rgbToHex(
@@ -224,6 +224,8 @@ function buildDay(
   const durationMin = isArrivalDay
     ? 0
     : (osrm?.duration ?? estimateDurationMin(coordinates));
+  const endColor = DAY_COLORS[(index - 1) % DAY_COLORS.length];
+  const startColor = tintColor(endColor, 0.45);
 
   return {
     id: `D${index}`,
@@ -231,7 +233,9 @@ function buildDay(
     start,
     end,
     routeSummary,
-    color: DAY_COLORS[(index - 1) % DAY_COLORS.length],
+    color: endColor,
+    startColor,
+    endColor,
     coordinates,
     bounds: computeBounds(coordinates),
     points,
@@ -375,9 +379,8 @@ export const trip: Trip = {
       "上午薰衣草园和六星街，昭苏公路未通，改走 S12 + G577 到昭苏。",
       [
         W["伊宁市"],
-        W["薰衣草园"],
         W["六星街"],
-        W["伊宁市"],
+        W["薰衣草园"],
         [81.5, 43.5],
         W["昭苏县"],
       ],
