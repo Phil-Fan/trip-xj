@@ -71,6 +71,8 @@ const WAYPOINTS: Record<string, [number, number]> = {
   喀纳斯湖: [87.055797, 48.82663],
   "阿禾公路186公里驿站": [87.566884, 48.462574],
   乌鲁木齐会展中心: [87.620762, 43.878519],
+  "独库公路中段": [84.439546, 43.474289],
+  "阿禾公路": [87.566884, 48.462574],
 };
 
 const DAY_COLORS: string[] = [
@@ -306,6 +308,7 @@ export const trip: Trip = {
         W["贾登峪"],
       ],
       [
+        { name: "阿禾公路", coordinates: W["阿禾公路"], type: "scenic" },
         { name: "禾木", coordinates: W["禾木"], type: "scenic" },
         { name: "贾登峪", coordinates: W["贾登峪"], type: "end" },
       ],
@@ -444,6 +447,7 @@ export const trip: Trip = {
       ],
       [
         { name: "百里画廊", coordinates: W["百里画廊"], type: "scenic" },
+        { name: "独库公路中段", coordinates: W["独库公路中段"], type: "scenic" },
         { name: "巴音布鲁克", coordinates: W["巴音布鲁克"], type: "end" },
       ],
     ),
