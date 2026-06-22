@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const days = [
+export const days = [
   {
     id: "D1",
     waypoints: [
@@ -80,6 +80,9 @@ const days = [
     waypoints: [
       [81.134, 43.157],
       [80.668138, 42.597704],
+      [81.134, 43.157],
+      [81.837, 43.217],
+      [82.5, 43.2],
       [83.233002, 43.434803],
     ],
   },
@@ -114,11 +117,7 @@ const days = [
     id: "D13",
     waypoints: [
       [84.14412, 43.025805],
-      [86.31492, 42.75331],
-      [86.39, 42.31],
-      [88.655, 42.793],
-      [88.311099, 43.363668],
-      [87.6168, 43.8256],
+      [87.481092, 43.917012],
     ],
   },
 ];
@@ -196,7 +195,9 @@ async function main() {
   console.log(`Wrote ${outPath}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (import.meta.url === new URL(process.argv[1], "file://").href) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
