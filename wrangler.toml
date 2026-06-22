@@ -1,0 +1,4 @@
+name = "trip"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-06-22"
+account_id = "你的 Cloudflare 账号 ID"
