@@ -80,9 +80,9 @@ const DAY_COLORS: string[] = [
   "#c3b091", // D8  khaki
   "#facc15", // D9  yellow
   "#f472b6", // D10 pink
-  "#8b5cf6", // D11 violet
-  "#d946ef", // D12 fuchsia
-  "#f43f5e", // D13 rose
+  "#ffffff", // D11 white
+  "#ef4444", // D12 red
+  "#a855f7", // D13 purple
 ];
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
@@ -223,7 +223,7 @@ function buildDay(
     ? 0
     : (osrm?.duration ?? estimateDurationMin(coordinates));
   const endColor = DAY_COLORS[(index - 1) % DAY_COLORS.length];
-  const startColor = tintColor(endColor, 0.45);
+  const startColor = tintColor(endColor, 0.65);
 
   return {
     id: `D${index}`,
