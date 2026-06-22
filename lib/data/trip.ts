@@ -67,24 +67,22 @@ const WAYPOINTS: Record<string, [number, number]> = {
   托克逊: [88.655, 42.793],
   达坂城: [88.311099, 43.363668],
   天山国际机场: [87.481092, 43.917012],
-  喀纳斯湖: [87.055797, 48.82663],
-  乌鲁木齐会展中心: [87.620762, 43.878519],
 };
 
 const DAY_COLORS: string[] = [
-  "#ef4444",
-  "#f97316",
-  "#f59e0b",
-  "#84cc16",
-  "#22c55e",
-  "#10b981",
-  "#14b8a6",
-  "#06b6d4",
-  "#3b82f6",
-  "#6366f1",
-  "#8b5cf6",
-  "#d946ef",
-  "#f43f5e",
+  "#f97316", // D1  orange
+  "#ef4444", // D2  red
+  "#7dd3fc", // D3  baby blue
+  "#84cc16", // D4  lime
+  "#000000", // D5  black
+  "#10b981", // D6  emerald
+  "#9ca3af", // D7  gray
+  "#c3b091", // D8  khaki
+  "#facc15", // D9  yellow
+  "#f472b6", // D10 pink
+  "#8b5cf6", // D11 violet
+  "#d946ef", // D12 fuchsia
+  "#f43f5e", // D13 rose
 ];
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
@@ -103,7 +101,7 @@ function rgbToHex(r: number, g: number, b: number): string {
     .join("")}`;
 }
 
-export function mixColors(a: string, b: string, t: number): string {
+function mixColors(a: string, b: string, t: number): string {
   const ca = hexToRgb(a);
   const cb = hexToRgb(b);
   return rgbToHex(

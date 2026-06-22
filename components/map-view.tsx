@@ -51,8 +51,8 @@ function createGradientPolylines(
   const coords = day.coordinates;
   if (coords.length < 2) return [];
 
-  const startColor = day.color;
-  const endColor = blendColors(day.color, "#000000", 0.35);
+  const startColor = day.startColor;
+  const endColor = day.endColor;
   const polylines: AMap.Polyline[] = [];
   const chunk = Math.max(1, Math.ceil(coords.length / GRADIENT_SEGMENTS));
 
