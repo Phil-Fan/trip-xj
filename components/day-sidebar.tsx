@@ -50,9 +50,6 @@ export default function DaySidebar() {
             <h2 className="text-lg font-semibold tracking-tight">
               {trip.title}
             </h2>
-            <p className="text-muted-foreground text-sm">
-              {trip.days.length} days itinerary
-            </p>
           </div>
           <Button
             variant="ghost"
@@ -87,10 +84,11 @@ export default function DaySidebar() {
                     className={cn(
                       "border transition-colors duration-200",
                       isActive
-                        ? "bg-card ring-2 ring-primary shadow-md"
+                        ? "bg-card shadow-md"
                         : isHovered
                           ? "bg-accent/60 shadow-sm"
                           : "bg-card/60 hover:bg-accent/40",
+                      activeDayId && !isActive && "opacity-60",
                     )}
                   >
                     <CardHeader className="pb-2">

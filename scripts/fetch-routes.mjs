@@ -34,6 +34,8 @@ const days = [
     id: "D4",
     waypoints: [
       [87.155579, 48.499305],
+      [87.055797, 48.82663],
+      [87.155579, 48.499305],
       [86.8649, 47.7005],
     ],
   },
@@ -78,8 +80,6 @@ const days = [
     waypoints: [
       [81.134, 43.157],
       [80.668138, 42.597704],
-      [81.134, 43.157],
-      [81.837, 43.217],
       [83.233002, 43.434803],
     ],
   },
@@ -105,8 +105,8 @@ const days = [
     id: "D12",
     waypoints: [
       [83.233002, 43.434803],
-      [84.004044, 43.328611],
       [83.919793, 43.718426],
+      [84.338121, 43.661625],
       [84.14412, 43.025805],
     ],
   },
@@ -115,6 +115,7 @@ const days = [
     waypoints: [
       [84.14412, 43.025805],
       [86.31492, 42.75331],
+      [86.39, 42.31],
       [88.655, 42.793],
       [88.311099, 43.363668],
       [87.6168, 43.8256],
@@ -122,34 +123,71 @@ const days = [
   },
 ];
 
+const AMAP_KEY = process.env.AMAP_API_KEY || process.env.NEXT_PUBLIC_AMAP_KEY;
+if (!AMAP_KEY) {
+  throw new Error("AMAP_API_KEY or NEXT_PUBLIC_AMAP_KEY must be set in the environment");
+}
+
+function formatCoord([lng, lat]) {
+  return `${lng.toFixed(6)},${lat.toFixed(6)}`;
+}
+
 async function fetchRoute(waypoints) {
-  const coords = waypoints.map(([lng, lat]) => `${lng},${lat}`).join(";");
-  const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+  const origin = formatCoord(waypoints[0]);
+  const destination = formatCoord(waypoints[waypoints.length - 1]);
+  const via = waypoints.slice(1, -1);
+  const params = new URLSearchParams({
+    origin,
+    destination,
+    output: "JSON",
+    extensions: "all",
+    key: AMAP_KEY,
+  });
+  if (via.length > 0) {
+    params.set("waypoints", via.map(formatCoord).join(";"));
+  }
+  const url = `https://restapi.amap.com/v3/direction/driving?${params.toString()}`;
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}`);
   }
   const json = await res.json();
-  if (json.code !== "Ok") {
-    throw new Error(json.message || json.code);
+  if (json.status !== "1") {
+    throw new Error(json.info || json.infocode || "Amap request failed");
   }
-  const route = json.routes[0];
+  const path = json.route.paths[0];
+  const coordinates = [];
+  let last = null;
+  for (const step of path.steps) {
+    for (const pt of step.polyline.split(";")) {
+      const [lng, lat] = pt.split(",").map(Number);
+      if (!last || last[0] !== lng || last[1] !== lat) {
+        coordinates.push([lng, lat]);
+        last = [lng, lat];
+      }
+    }
+  }
   return {
-    coordinates: route.geometry.coordinates,
-    distance: Math.round(route.distance / 1000),
+    coordinates,
+    distance: Math.round(parseInt(path.distance, 10) / 1000),
   };
 }
 
 async function main() {
-  const data = {};
-  for (const day of days) {
+  const targetDay = process.argv[2];
+  const daysToFetch = targetDay ? days.filter((d) => d.id === targetDay) : days;
+  if (targetDay && daysToFetch.length === 0) {
+    throw new Error(`Unknown day: ${targetDay}`);
+  }
+
+  const data = JSON.parse(await fs.readFile("lib/data/route-geometries.json", "utf8"));
+  for (const day of daysToFetch) {
     try {
       const result = await fetchRoute(day.waypoints);
       data[day.id] = result;
       console.log(`${day.id}: ${result.coordinates.length} points, ${result.distance} km`);
     } catch (err) {
       console.error(`${day.id}: failed - ${err.message}`);
-      data[day.id] = null;
     }
     await new Promise((r) => setTimeout(r, 1200));
   }

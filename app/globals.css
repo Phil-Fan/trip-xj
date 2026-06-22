@@ -195,4 +195,10 @@
   html {
     @apply font-sans;
   }
+  .amap-scale,
+  .amap-scalecontrol,
+  .amap-control-scale,
+  [class*="amap-scale"] {
+    display: none !important;
+  }
 }

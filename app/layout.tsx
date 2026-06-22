@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Xinjiang Self Drive — 13 Day Route",
+  title: "北疆自驾路书",
   description: "Interactive map visualization of a 13-day Xinjiang self-driving itinerary.",
 };
 

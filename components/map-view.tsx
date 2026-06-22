@@ -31,15 +31,20 @@ function RoutePolylines({ map }: { map: AMap.Map }) {
         const polyline = new AMap.Polyline({
           path: day.coordinates,
           strokeColor: day.color,
-          strokeWeight: 3,
-          strokeOpacity: 0.5,
+          strokeWeight: 5,
+          strokeOpacity: 0.75,
           lineCap: "round",
           lineJoin: "round",
+          isOutline: true,
+          outlineColor: "#ffffff",
+          borderWeight: 2,
           extData: { dayId: day.id },
           cursor: "pointer",
         });
-        polyline.on("click", () => setActiveDay(day.id));
-        polyline.on("mouseover", () => setHoveredDay(day.id));
+        polyline.on("mouseover", () => {
+          setHoveredDay(day.id);
+          setActiveDay(day.id);
+        });
         polyline.on("mouseout", () => setHoveredDay(null));
         return polyline;
       });
@@ -52,13 +57,20 @@ function RoutePolylines({ map }: { map: AMap.Map }) {
   }, [map, setActiveDay, setHoveredDay]);
 
   useEffect(() => {
+    const hasActive = activeDayId !== null;
     polylinesRef.current.forEach((polyline) => {
       const dayId = polyline.getExtData()?.dayId;
       const isActive = dayId === activeDayId;
       const isHovered = dayId === hoveredDayId;
       polyline.setOptions({
-        strokeWeight: isActive ? 6 : isHovered ? 5 : 3,
-        strokeOpacity: isActive ? 1 : isHovered ? 0.95 : 0.5,
+        strokeWeight: isActive ? 9 : isHovered ? 7 : 5,
+        strokeOpacity: isActive
+          ? 1
+          : isHovered
+            ? 0.8
+            : hasActive
+              ? 0.25
+              : 0.75,
         zIndex: isActive ? 100 : isHovered ? 50 : 1,
       });
     });
@@ -126,6 +138,8 @@ export default function MapView() {
           center: MAP_CENTER,
           zoom: MAP_ZOOM,
           viewMode: "2D",
+          mapStyle: "amap://styles/light",
+          showScale: false,
         });
         setMapState(instance);
         setStoreMap(instance);

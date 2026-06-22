@@ -64,6 +64,7 @@ const WAYPOINTS: Record<string, [number, number]> = {
   托克逊: [88.655, 42.793],
   达坂城: [88.311099, 43.363668],
   天山国际机场: [87.481092, 43.917012],
+  喀纳斯湖: [87.055797, 48.82663],
 };
 
 const DAY_COLORS: string[] = [
@@ -198,7 +199,7 @@ function buildDay(
 const W = WAYPOINTS;
 
 export const trip: Trip = {
-  title: "Xinjiang Self Drive",
+  title: "北疆自驾路书",
   days: [
     buildDay(
       1,
@@ -262,10 +263,11 @@ export const trip: Trip = {
       "喀纳斯 → 布尔津",
       "贾登峪",
       "布尔津",
-      "喀纳斯景区乘景观车游览，晚上返回布尔津住宿。",
-      [W["贾登峪"], [87.1, 48.2], W["布尔津"]],
+      "贾登峪乘景区区间车至喀纳斯湖游览，晚上返回布尔津住宿。",
+      [W["贾登峪"], W["喀纳斯湖"], W["贾登峪"], W["布尔津"]],
       [
-        { name: "喀纳斯", coordinates: W["贾登峪"], type: "scenic" },
+        { name: "贾登峪", coordinates: W["贾登峪"], type: "start" },
+        { name: "喀纳斯湖", coordinates: W["喀纳斯湖"], type: "scenic" },
         { name: "布尔津", coordinates: W["布尔津"], type: "end" },
       ],
     ),
@@ -344,15 +346,8 @@ export const trip: Trip = {
       "夏塔 → 新源县",
       "昭苏县",
       "新源县",
-      "夏塔古道景区游览后，经特克斯抵达新源县住宿。",
-      [
-        W["昭苏县"],
-        W["夏塔"],
-        W["昭苏县"],
-        W["特克斯"],
-        [82.5, 43.2],
-        W["新源县"],
-      ],
+      "夏塔古道景区游览后，前往新源县住宿。",
+      [W["昭苏县"], W["夏塔"], W["新源县"]],
       [
         { name: "夏塔", coordinates: W["夏塔"], type: "scenic" },
         { name: "新源县", coordinates: W["新源县"], type: "end" },
@@ -384,7 +379,6 @@ export const trip: Trip = {
       "上午 S315 百里画廊，下午走独库公路中段到巴音布鲁克。",
       [
         W["新源县"],
-        W["那拉提"],
         W["百里画廊"],
         W["乔尔玛"],
         W["巴音布鲁克"],
@@ -396,19 +390,19 @@ export const trip: Trip = {
     ),
     buildDay(
       13,
-      "巴音布鲁克 → 乌鲁木齐",
+      "巴音布鲁克 → 天山国际机场",
       "巴音布鲁克",
-      "乌鲁木齐",
-      "经 G218 与 G0711 高速返回乌鲁木齐，结束行程。",
+      "天山国际机场",
+      "经 G218 与 G0711 高速返回乌鲁木齐天山国际机场，结束行程。",
       [
         W["巴音布鲁克"],
         W["巴伦台"],
         W["和静"],
         W["托克逊"],
         W["达坂城"],
-        W["乌鲁木齐"],
+        W["天山国际机场"],
       ],
-      [{ name: "乌鲁木齐", coordinates: W["乌鲁木齐"], type: "end" }],
+      [{ name: "天山国际机场", coordinates: W["天山国际机场"], type: "end" }],
     ),
   ],
 };
