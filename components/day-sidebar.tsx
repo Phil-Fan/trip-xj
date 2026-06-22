@@ -7,7 +7,22 @@ import { Separator } from "@/components/ui/separator";
 import { trip } from "@/lib/data/trip";
 import { useTripStore } from "@/lib/store/trip-store";
 import { cn } from "@/lib/utils";
-import { ArrowRight, Car, MapPin, PanelRightClose, PanelRightOpen } from "lucide-react";
+import {
+  ArrowRight,
+  Car,
+  Clock,
+  MapPin,
+  PanelRightClose,
+  PanelRightOpen,
+} from "lucide-react";
+
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}分钟`;
+  if (m === 0) return `${h}小时`;
+  return `${h}小时${m}分钟`;
+}
 
 export default function DaySidebar() {
   const [open, setOpen] = useState(true);
@@ -114,6 +129,10 @@ export default function DaySidebar() {
                       <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
                         <Car className="h-3.5 w-3.5" />
                         <span>约 {day.distanceKm} km</span>
+                      </div>
+                      <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>约 {formatDuration(day.durationMin)}</span>
                       </div>
                       <Separator />
                       <p className="text-muted-foreground text-xs leading-relaxed">

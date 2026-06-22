@@ -15,6 +15,7 @@ export type Day = {
   bounds: [[number, number], [number, number]];
   points: Point[];
   distanceKm: number;
+  durationMin: number;
 };
 
 export type Trip = {
@@ -65,6 +66,7 @@ const WAYPOINTS: Record<string, [number, number]> = {
   达坂城: [88.311099, 43.363668],
   天山国际机场: [87.481092, 43.917012],
   喀纳斯湖: [87.055797, 48.82663],
+  乌鲁木齐会展中心: [87.620762, 43.878519],
 };
 
 const DAY_COLORS: string[] = [
@@ -157,6 +159,12 @@ function estimateDistanceKm(coordinates: [number, number][]): number {
   return Math.round(total);
 }
 
+function estimateDurationMin(coordinates: [number, number][]): number {
+  // Rough fallback: 60 km/h average over the interpolated straight-line path.
+  const km = estimateDistanceKm(coordinates);
+  return Math.round((km / 60) * 60);
+}
+
 function buildDay(
   index: number,
   title: string,
@@ -169,7 +177,7 @@ function buildDay(
   const osrm = (
     routeGeometries as unknown as Record<
       string,
-      { coordinates: [number, number][]; distance: number } | null
+      { coordinates: [number, number][]; distance: number; duration: number } | null
     >
   )[`D${index}`];
 
@@ -181,6 +189,9 @@ function buildDay(
   const distanceKm = isArrivalDay
     ? 0
     : (osrm?.distance ?? estimateDistanceKm(coordinates));
+  const durationMin = isArrivalDay
+    ? 0
+    : (osrm?.duration ?? estimateDurationMin(coordinates));
 
   return {
     id: `D${index}`,
@@ -193,6 +204,7 @@ function buildDay(
     bounds: computeBounds(coordinates),
     points,
     distanceKm,
+    durationMin,
   };
 }
 
@@ -294,12 +306,15 @@ export const trip: Trip = {
     ),
     buildDay(
       6,
-      "休整 → 精河县",
+      "乌鲁木齐会展中心 → 精河县",
       "奎屯",
       "精河县",
-      "休整并检修无人机，傍晚前往赛里木湖东侧的精河县住宿。",
-      [W["奎屯"], W["独山子"], [83.5, 44.5], W["精河县"]],
-      [{ name: "精河县", coordinates: W["精河县"], type: "end" }],
+      "从奎屯往返乌鲁木齐会展中心，傍晚前往精河县住宿。",
+      [W["奎屯"], W["乌鲁木齐会展中心"], W["奎屯"], W["精河县"]],
+      [
+        { name: "乌鲁木齐会展中心", coordinates: W["乌鲁木齐会展中心"], type: "scenic" },
+        { name: "精河县", coordinates: W["精河县"], type: "end" },
+      ],
     ),
     buildDay(
       7,
