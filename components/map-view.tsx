@@ -8,10 +8,18 @@ import { useTripStore } from "@/lib/store/trip-store";
 const MAP_CENTER: [number, number] = [87.6168, 43.8256];
 const MAP_ZOOM = 6;
 
-function createMarkerContent(name: string, color: string): string {
+function createMarkerContent(
+  name: string,
+  color: string,
+  shape: "circle" | "square",
+): string {
+  const shapeStyle =
+    shape === "circle"
+      ? "border-radius:50%;"
+      : "border-radius:3px;";
   return `
     <div style="display:flex;flex-direction:column;align-items:center;pointer-events:none;">
-      <div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
+      <div style="width:12px;height:12px;${shapeStyle}background:${color};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
       <div style="margin-top:3px;background:rgba(255,255,255,0.92);color:#111;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.15);">${name}</div>
     </div>
   `;
@@ -132,13 +140,27 @@ function DayMarkers({ map }: { map: AMap.Map }) {
     const day = trip.days.find((d) => d.id === activeDayId);
     if (!day) return;
 
-    const markers = day.points.map((point) => {
-      return new AMap.Marker({
-        position: point.coordinates,
+    const markers: AMap.Marker[] = [];
+
+    markers.push(
+      new AMap.Marker({
+        position: day.startCoordinates,
         anchor: "bottom-center",
-        content: createMarkerContent(point.name, day.color),
-      });
+        content: createMarkerContent(day.start, day.color, "circle"),
+      }),
+    );
+
+    day.points.forEach((point) => {
+      const shape = point.type === "end" ? "square" : "circle";
+      markers.push(
+        new AMap.Marker({
+          position: point.coordinates,
+          anchor: "bottom-center",
+          content: createMarkerContent(point.name, day.color, shape),
+        }),
+      );
     });
+
     map.add(markers);
     markersRef.current = markers;
   }, [map, activeDayId]);

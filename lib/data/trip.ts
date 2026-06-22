@@ -16,6 +16,7 @@ export type Day = {
   coordinates: [number, number][];
   bounds: [[number, number], [number, number]];
   points: Point[];
+  startCoordinates: [number, number];
   distanceKm: number;
   durationMin: number;
 };
@@ -67,6 +68,8 @@ const WAYPOINTS: Record<string, [number, number]> = {
   托克逊: [88.655, 42.793],
   达坂城: [88.311099, 43.363668],
   天山国际机场: [87.481092, 43.917012],
+  喀纳斯湖: [87.055797, 48.82663],
+  "阿禾公路186公里驿站": [87.566884, 48.462574],
 };
 
 const DAY_COLORS: string[] = [
@@ -80,7 +83,7 @@ const DAY_COLORS: string[] = [
   "#c3b091", // D8  khaki
   "#facc15", // D9  yellow
   "#f472b6", // D10 pink
-  "#ffffff", // D11 white
+  "#d1d5db", // D11 light gray
   "#ef4444", // D12 red
   "#a855f7", // D13 purple
 ];
@@ -224,6 +227,7 @@ function buildDay(
     : (osrm?.duration ?? estimateDurationMin(coordinates));
   const endColor = DAY_COLORS[(index - 1) % DAY_COLORS.length];
   const startColor = tintColor(endColor, 0.65);
+  const startCoordinates = (WAYPOINTS[start] ?? waypoints[0]) as [number, number];
 
   return {
     id: `D${index}`,
@@ -237,6 +241,7 @@ function buildDay(
     coordinates,
     bounds: computeBounds(coordinates),
     points,
+    startCoordinates,
     distanceKm,
     durationMin,
   };
@@ -295,7 +300,7 @@ export const trip: Trip = {
         W["福海县"],
         W["北屯"],
         W["阿勒泰"],
-        [87.0, 48.2],
+        W["阿禾公路186公里驿站"],
         W["禾木"],
         W["贾登峪"],
       ],
@@ -327,7 +332,6 @@ export const trip: Trip = {
         W["布尔津"],
         W["五彩滩"],
         W["布尔津"],
-        [86.3, 47.3],
         W["乌尔禾魔鬼城"],
         W["克拉玛依"],
         W["奎屯"],
@@ -340,15 +344,12 @@ export const trip: Trip = {
     ),
     buildDay(
       6,
-      "乌鲁木齐会展中心 → 精河县",
+      "休整 → 精河县",
       "奎屯",
       "精河县",
-      "从奎屯往返乌鲁木齐会展中心，傍晚前往精河县住宿。",
-      [W["奎屯"], W["乌鲁木齐会展中心"], W["奎屯"], W["精河县"]],
-      [
-        { name: "乌鲁木齐会展中心", coordinates: W["乌鲁木齐会展中心"], type: "scenic" },
-        { name: "精河县", coordinates: W["精河县"], type: "end" },
-      ],
+      "休整并检修无人机，傍晚前往赛里木湖东侧的精河县住宿。",
+      [W["奎屯"], W["独山子"], [83.5, 44.5], W["精河县"]],
+      [{ name: "精河县", coordinates: W["精河县"], type: "end" }],
     ),
     buildDay(
       7,
@@ -393,8 +394,15 @@ export const trip: Trip = {
       "夏塔 → 新源县",
       "昭苏县",
       "新源县",
-      "夏塔古道景区游览后，前往新源县住宿。",
-      [W["昭苏县"], W["夏塔"], W["新源县"]],
+      "夏塔古道景区游览后，经特克斯抵达新源县住宿。",
+      [
+        W["昭苏县"],
+        W["夏塔"],
+        W["昭苏县"],
+        W["特克斯"],
+        [82.5, 43.2],
+        W["新源县"],
+      ],
       [
         { name: "夏塔", coordinates: W["夏塔"], type: "scenic" },
         { name: "新源县", coordinates: W["新源县"], type: "end" },
