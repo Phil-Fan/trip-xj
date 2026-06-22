@@ -182,6 +182,7 @@ export default function MapView() {
           viewMode: "2D",
           mapStyle: "amap://styles/light",
           showScale: false,
+          keyboardEnable: false,
         });
         setMapState(instance);
         setStoreMap(instance);

@@ -12,6 +12,7 @@ export default function DaySlider() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
 
       const currentIndex = trip.days.findIndex((d) => d.id === activeDayId);
       const nextIndex =
