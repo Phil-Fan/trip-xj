@@ -46,3 +46,4 @@ coverage
 
 # pnpm
 .pnpm-store
+.qoder
