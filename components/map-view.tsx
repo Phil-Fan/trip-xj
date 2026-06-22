@@ -17,6 +17,68 @@ function createMarkerContent(name: string, color: string): string {
   `;
 }
 
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const clean = hex.replace("#", "");
+  const bigint = parseInt(clean, 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function blendColors(a: string, b: string, t: number): string {
+  const ca = hexToRgb(a);
+  const cb = hexToRgb(b);
+  return rgbToHex(
+    Math.round(ca.r + (cb.r - ca.r) * t),
+    Math.round(ca.g + (cb.g - ca.g) * t),
+    Math.round(ca.b + (cb.b - ca.b) * t),
+  );
+}
+
+const GRADIENT_SEGMENTS = 24;
+
+function createGradientPolylines(
+  day: Day,
+  setActiveDay: (id: string) => void,
+  setHoveredDay: (id: string | null) => void,
+): AMap.Polyline[] {
+  const coords = day.coordinates;
+  if (coords.length < 2) return [];
+
+  const startColor = day.color;
+  const endColor = blendColors(day.color, "#000000", 0.35);
+  const polylines: AMap.Polyline[] = [];
+  const chunk = Math.max(1, Math.ceil(coords.length / GRADIENT_SEGMENTS));
+
+  for (let i = 0; i < coords.length - 1; i += chunk) {
+    const segment = coords.slice(i, Math.min(i + chunk + 1, coords.length));
+    const t = Math.min(1, (i + chunk / 2) / coords.length);
+    const polyline = new AMap.Polyline({
+      path: segment,
+      strokeColor: blendColors(startColor, endColor, t),
+      strokeWeight: 5,
+      strokeOpacity: 0.8,
+      lineCap: "round",
+      lineJoin: "round",
+      extData: { dayId: day.id },
+      cursor: "pointer",
+    });
+    polyline.on("mouseover", () => {
+      setHoveredDay(day.id);
+      setActiveDay(day.id);
+    });
+    polyline.on("mouseout", () => setHoveredDay(null));
+    polylines.push(polyline);
+  }
+  return polylines;
+}
+
 function RoutePolylines({ map }: { map: AMap.Map }) {
   const activeDayId = useTripStore((state) => state.activeDayId);
   const hoveredDayId = useTripStore((state) => state.hoveredDayId);
@@ -27,27 +89,7 @@ function RoutePolylines({ map }: { map: AMap.Map }) {
   useEffect(() => {
     const polylines = trip.days
       .filter((day) => day.coordinates.length > 0)
-      .map((day) => {
-        const polyline = new AMap.Polyline({
-          path: day.coordinates,
-          strokeColor: day.color,
-          strokeWeight: 5,
-          strokeOpacity: 0.75,
-          lineCap: "round",
-          lineJoin: "round",
-          isOutline: true,
-          outlineColor: "#ffffff",
-          borderWeight: 2,
-          extData: { dayId: day.id },
-          cursor: "pointer",
-        });
-        polyline.on("mouseover", () => {
-          setHoveredDay(day.id);
-          setActiveDay(day.id);
-        });
-        polyline.on("mouseout", () => setHoveredDay(null));
-        return polyline;
-      });
+      .flatMap((day) => createGradientPolylines(day, setActiveDay, setHoveredDay));
     map.add(polylines);
     polylinesRef.current = polylines;
     return () => {
@@ -67,10 +109,10 @@ function RoutePolylines({ map }: { map: AMap.Map }) {
         strokeOpacity: isActive
           ? 1
           : isHovered
-            ? 0.8
+            ? 0.85
             : hasActive
               ? 0.25
-              : 0.75,
+              : 0.8,
         zIndex: isActive ? 100 : isHovered ? 50 : 1,
       });
     });
