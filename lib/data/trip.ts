@@ -11,6 +11,8 @@ export type Day = {
   end: string;
   routeSummary: string;
   color: string;
+  startColor: string;
+  endColor: string;
   coordinates: [number, number][];
   bounds: [[number, number], [number, number]];
   points: Point[];
@@ -84,6 +86,36 @@ const DAY_COLORS: string[] = [
   "#d946ef",
   "#f43f5e",
 ];
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const normalized = hex.replace("#", "");
+  const bigint = parseInt(normalized, 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return `#${[r, g, b]
+    .map((c) => c.toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+function mixColors(a: string, b: string, t: number): string {
+  const ca = hexToRgb(a);
+  const cb = hexToRgb(b);
+  return rgbToHex(
+    Math.round(ca.r + (cb.r - ca.r) * t),
+    Math.round(ca.g + (cb.g - ca.g) * t),
+    Math.round(ca.b + (cb.b - ca.b) * t),
+  );
+}
+
+function tintColor(hex: string, factor: number): string {
+  return mixColors(hex, "#ffffff", factor);
+}
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
@@ -347,7 +379,6 @@ export const trip: Trip = {
         W["六星街"],
         W["伊宁市"],
         [81.5, 43.5],
-        W["特克斯"],
         W["昭苏县"],
       ],
       [
