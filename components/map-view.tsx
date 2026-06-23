@@ -84,6 +84,9 @@ function createGradientPolylines(
       setActiveDay(day.id);
     });
     polyline.on("mouseout", () => setHoveredDay(null));
+    polyline.on("click", () => {
+      setActiveDay(day.id);
+    });
     polylines.push(polyline);
   }
   return polylines;
