@@ -34,7 +34,7 @@ export function PhotoPreview() {
       onClick={closePhotoPreview}
     >
       <div
-        className="relative max-h-[80vh] max-w-[85vw] rounded-sm bg-[#fdfbf7] p-3 pb-10 shadow-2xl"
+        className="relative rounded-sm bg-[#fdfbf7] p-3 pb-10 shadow-2xl"
         style={{
           boxShadow:
             "0 1px 2px rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.15), 0 24px 48px rgba(0,0,0,0.18)",
@@ -51,7 +51,7 @@ export function PhotoPreview() {
         <img
           src={preview.src}
           alt={`${preview.dayId} photo`}
-          className="max-h-[65vh] max-w-[75vw] object-contain"
+          className="max-h-[70vh] max-w-[70vw] object-contain"
         />
       </div>
     </div>
