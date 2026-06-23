@@ -168,6 +168,275 @@ function DayMarkers({ map }: { map: AMap.Map }) {
   return null;
 }
 
+function CarMarker({ map }: { map: AMap.Map }) {
+  const activeDayId = useTripStore((state) => state.activeDayId);
+  const hoveredDayId = useTripStore((state) => state.hoveredDayId);
+  const markerRef = useRef<AMap.Marker | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+    const targetId = activeDayId || hoveredDayId;
+    const day = targetId ? trip.days.find((d) => d.id === targetId) : null;
+
+    if (!day || day.coordinates.length < 2) {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+        markerRef.current = null;
+      }
+      return;
+    }
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (markerRef.current) {
+      markerRef.current.setMap(null);
+    }
+
+    const path = day.coordinates.map(
+      ([lng, lat]) => new AMap.LngLat(lng, lat),
+    );
+
+    function haversineKm(a: AMap.LngLat, b: AMap.LngLat): number {
+      const R = 6371;
+      const toRad = (v: number) => (v * Math.PI) / 180;
+      const dLat = toRad(b.getLat() - a.getLat());
+      const dLng = toRad(b.getLng() - a.getLng());
+      const x =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(a.getLat())) *
+          Math.cos(toRad(b.getLat())) *
+          Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+    }
+
+    const cumulativeDistances: number[] = [0];
+    for (let i = 1; i < path.length; i++) {
+      cumulativeDistances.push(
+        cumulativeDistances[i - 1] + haversineKm(path[i - 1], path[i]),
+      );
+    }
+
+    let cancelled = false;
+
+    const img = new Image();
+    img.src = `${window.location.origin}/car.png`;
+    img.onload = () => {
+      if (cancelled) return;
+
+      const currentDay = day;
+      if (!currentDay) return;
+
+      const targetWidth = 28;
+      const ratio = img.naturalHeight / img.naturalWidth;
+      const targetHeight = Math.max(12, targetWidth * ratio);
+      const iconSize = new AMap.Size(targetWidth, targetHeight);
+      const icon = new AMap.Icon({
+        image: img.src,
+        size: iconSize,
+        imageSize: iconSize,
+      });
+
+      const marker = new AMap.Marker({
+        position: path[0],
+        icon,
+        anchor: "center",
+        zIndex: 200,
+      });
+
+      map.add(marker);
+      markerRef.current = marker;
+      startTimeRef.current = performance.now();
+
+      const duration = Math.max(3000, Math.min(7000, day.distanceKm * 25));
+
+      function normalizeAngle(angle: number): number {
+        return ((angle % 360) + 360) % 360;
+      }
+
+      function lerpAngle(current: number, target: number, factor: number): number {
+        const diff = normalizeAngle(target - current + 180) - 180;
+        return normalizeAngle(current + diff * factor);
+      }
+
+      function headingFromSegments(centerIndex: number): number {
+        const total = path.length - 1;
+        const radius = 8;
+        const startIdx = Math.max(0, centerIndex - radius);
+        const endIdx = Math.min(total, centerIndex + radius);
+
+        let sumDx = 0;
+        let sumDy = 0;
+        for (let i = startIdx; i < endIdx; i++) {
+          const c1 = map.lngLatToContainer(path[i]);
+          const c2 = map.lngLatToContainer(path[i + 1]);
+          sumDx += c2.getX() - c1.getX();
+          sumDy += c2.getY() - c1.getY();
+        }
+
+        const deg = (Math.atan2(sumDy, sumDx) * 180) / Math.PI;
+        // Car image faces left (west). setAngle(0) keeps it facing left,
+        // so to make the front point along the path we rotate by (pathAngle - 180).
+        return normalizeAngle(deg - 180);
+      }
+
+      function positionAt(t: number): {
+        position: AMap.LngLat;
+        angle: number;
+      } {
+        const total = path.length - 1;
+        const clampedT = Math.max(0, Math.min(1, t));
+        const index = Math.min(total - 1, Math.floor(clampedT * total));
+        const localT = clampedT * total - index;
+        const p1 = path[index];
+        const p2 = path[index + 1];
+        const lng = p1.getLng() + (p2.getLng() - p1.getLng()) * localT;
+        const lat = p1.getLat() + (p2.getLat() - p1.getLat()) * localT;
+
+        const angle = headingFromSegments(index);
+
+        return { position: new AMap.LngLat(lng, lat), angle };
+      }
+
+      let currentAngle = headingFromSegments(0);
+      let lastProgressUpdate = 0;
+
+      function animate(now: number) {
+        const elapsed = now - startTimeRef.current;
+        const t = (elapsed % duration) / duration;
+        const { position, angle: targetAngle } = positionAt(t);
+        currentAngle = lerpAngle(currentAngle, targetAngle, 0.12);
+        marker.setPosition(position);
+        marker.setAngle(currentAngle);
+
+        if (now - lastProgressUpdate > 150) {
+          lastProgressUpdate = now;
+          const segmentIndex = Math.min(
+            path.length - 2,
+            Math.floor(t * (path.length - 1)),
+          );
+          const localT = t * (path.length - 1) - segmentIndex;
+          const d0 = cumulativeDistances[segmentIndex];
+          const d1 = cumulativeDistances[segmentIndex + 1];
+          const distanceKm = Math.max(
+            0,
+            Math.min(currentDay.distanceKm, d0 + (d1 - d0) * localT),
+          );
+          const elapsedMin =
+            currentDay.distanceKm > 0
+              ? (distanceKm / currentDay.distanceKm) * currentDay.durationMin
+              : 0;
+          useTripStore.getState().setCarProgress({
+            dayId: currentDay.id,
+            elapsedMin,
+            distanceKm,
+          });
+        }
+
+        rafRef.current = requestAnimationFrame(animate);
+      }
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    return () => {
+      cancelled = true;
+      useTripStore.getState().setCarProgress(null);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+        markerRef.current = null;
+      }
+    };
+  }, [map, activeDayId, hoveredDayId]);
+
+  return null;
+}
+
+function formatElapsedTime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = Math.floor(minutes % 60);
+  if (h === 0) return `${m}分钟`;
+  if (m === 0) return `${h}小时`;
+  return `${h}小时${m}分钟`;
+}
+
+function CarInfoOverlay() {
+  const map = useTripStore((state) => state.map);
+  const activeDayId = useTripStore((state) => state.activeDayId);
+  const hoveredDayId = useTripStore((state) => state.hoveredDayId);
+  const carProgress = useTripStore((state) => state.carProgress);
+  const [screenPos, setScreenPos] = useState<{ x: number; y: number } | null>(
+    null,
+  );
+
+  const targetId = activeDayId || hoveredDayId;
+  const day = targetId ? trip.days.find((d) => d.id === targetId) : null;
+
+  useEffect(() => {
+    if (!map || !day || day.coordinates.length < 2) {
+      setScreenPos(null);
+      return;
+    }
+
+    function updatePosition() {
+      if (!map || !day) return;
+      const pixel = map.lngLatToContainer(
+        new AMap.LngLat(day.startCoordinates[0], day.startCoordinates[1]),
+      );
+      setScreenPos({ x: pixel.getX(), y: pixel.getY() });
+    }
+
+    updatePosition();
+    map.on("move", updatePosition);
+    map.on("zoom", updatePosition);
+
+    return () => {
+      map.off("move", updatePosition);
+      map.off("zoom", updatePosition);
+    };
+  }, [map, day]);
+
+  if (!day || day.coordinates.length < 2 || !screenPos) return null;
+
+  const progress =
+    carProgress?.dayId === day.id
+      ? carProgress
+      : { distanceKm: 0, elapsedMin: 0 };
+
+  return (
+    <div
+      className="pointer-events-none absolute z-10 rounded-lg border border-border/60 bg-background/85 px-3 py-2 text-xs shadow-md backdrop-blur-sm"
+      style={{
+        left: screenPos.x + 12,
+        top: screenPos.y - 12,
+        transform: "translateY(-100%)",
+      }}
+    >
+      <div className="font-semibold text-foreground">{day.id} 行程进度</div>
+      <div className="mt-1 space-y-0.5 text-muted-foreground">
+        <div>已行驶: {progress.distanceKm.toFixed(1)} km</div>
+        <div>已用时: {formatElapsedTime(progress.elapsedMin)}</div>
+      </div>
+    </div>
+  );
+}
+
+function HelpHint() {
+  return (
+    <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg border border-border/60 bg-background/85 px-3 py-2 text-xs shadow-md backdrop-blur-sm">
+      <div className="space-y-0.5 text-muted-foreground">
+        <div>
+          <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">←</kbd>{" "}
+          <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">→</kbd>{" "}
+          切换日期
+        </div>
+        <div>Hover / 点击选择路线</div>
+      </div>
+    </div>
+  );
+}
+
 export default function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMapState] = useState<AMap.Map | null>(null);
@@ -194,7 +463,7 @@ export default function MapView() {
     AMapLoader.load({
       key,
       version: "2.0",
-      plugins: [],
+      plugins: ["AMap.MoveAnimation"],
     })
       .then((AMap) => {
         if (!isMounted || !containerRef.current) return;
@@ -235,10 +504,13 @@ export default function MapView() {
 
   return (
     <div ref={containerRef} className="relative h-full w-full">
+      <CarInfoOverlay />
+      <HelpHint />
       {map && (
         <>
           <RoutePolylines map={map} />
           <DayMarkers map={map} />
+          <CarMarker map={map} />
         </>
       )}
     </div>
