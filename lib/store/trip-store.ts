@@ -1,11 +1,18 @@
 import { create } from "zustand";
 import { trip } from "@/lib/data/trip";
 
+export interface CarProgress {
+  dayId: string;
+  elapsedMin: number;
+  distanceKm: number;
+}
+
 interface TripState {
   activeDayId: string | null;
   hoveredDayId: string | null;
   selectedRoute: string | null;
   map: AMap.Map | null;
+  carProgress: CarProgress | null;
 }
 
 interface TripActions {
@@ -13,6 +20,7 @@ interface TripActions {
   setHoveredDay: (id: string | null) => void;
   setSelectedRoute: (id: string | null) => void;
   setMap: (map: AMap.Map | null) => void;
+  setCarProgress: (progress: CarProgress | null) => void;
   clearSelection: () => void;
   fitToDay: (id: string) => void;
 }
@@ -24,6 +32,7 @@ export const useTripStore = create<TripStore>((set, get) => ({
   hoveredDayId: null,
   selectedRoute: null,
   map: null,
+  carProgress: null,
 
   setActiveDay: (id) => {
     set({ activeDayId: id });
@@ -44,8 +53,17 @@ export const useTripStore = create<TripStore>((set, get) => ({
     set({ map });
   },
 
+  setCarProgress: (progress) => {
+    set({ carProgress: progress });
+  },
+
   clearSelection: () => {
-    set({ activeDayId: null, hoveredDayId: null, selectedRoute: null });
+    set({
+      activeDayId: null,
+      hoveredDayId: null,
+      selectedRoute: null,
+      carProgress: null,
+    });
   },
 
   fitToDay: (id) => {
@@ -71,15 +89,19 @@ export const useTripStore = create<TripStore>((set, get) => ({
     const fitBounds = map.setBounds as (
       bounds: AMap.Bounds,
       immediately?: boolean,
-      padding?: [number, number],
+      padding?: [number, number, number, number],
     ) => void;
-    fitBounds(
-      new AMap.Bounds(
-        new AMap.LngLat(minLng, minLat),
-        new AMap.LngLat(maxLng, maxLat),
-      ),
-      false,
-      [80, 80],
-    );
+    try {
+      fitBounds(
+        new AMap.Bounds(
+          new AMap.LngLat(minLng, minLat),
+          new AMap.LngLat(maxLng, maxLat),
+        ),
+        false,
+        [80, 80, 80, 80],
+      );
+    } catch {
+      // Map instance may be destroyed or not ready; ignore.
+    }
   },
 }));
