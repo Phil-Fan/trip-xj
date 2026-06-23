@@ -25,6 +25,11 @@ function getBasePhotoCount(distanceKm: number): number {
   return 5;
 }
 
+// Anchor specific base photos to a named point so they cluster around it.
+const BASE_ANCHORS: Record<string, Record<number, string>> = {
+  D2: { 2: "天山天池", 3: "天山天池" },
+};
+
 interface PhotoConfig {
   position: AMap.LngLat;
   rotation: number;
@@ -59,6 +64,10 @@ function makeConfig(
   };
 }
 
+function findPoint(day: Day, name: string): Point | undefined {
+  return day.points.find((p) => p.name === name);
+}
+
 function getPhotoConfigs(day: Day): PhotoConfig[] {
   if (day.coordinates.length < 2) return [];
 
@@ -77,15 +86,28 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
 
   // Base route accent photos
   for (let i = 0; i < baseCount; i++) {
-    const t = (i + 1) / (baseCount + 1);
-    const idx = Math.min(total - 1, Math.floor(t * (total - 1)));
-    const [lng, lat] = day.coordinates[idx];
+    const anchorName = BASE_ANCHORS[day.id]?.[i];
+    const anchorPoint = anchorName ? findPoint(day, anchorName) : null;
+
+    let position: AMap.LngLat;
+    if (anchorPoint) {
+      position = new AMap.LngLat(
+        anchorPoint.coordinates[0],
+        anchorPoint.coordinates[1],
+      );
+    } else {
+      const t = (i + 1) / (baseCount + 1);
+      const idx = Math.min(total - 1, Math.floor(t * (total - 1)));
+      const [lng, lat] = day.coordinates[idx];
+      position = new AMap.LngLat(lng, lat);
+    }
+
     const seedBase = hash(`${day.id}-photo-${i}`);
     configs.push(
       makeConfig(
         day,
         seedBase,
-        new AMap.LngLat(lng, lat),
+        position,
         photoCandidates(`${day.id}-${i + 1}`),
         50 + i,
       ),
@@ -138,7 +160,9 @@ function PhotoMarker({ map, config, visible }: PhotoMarkerProps) {
     `;
     containerRef.current = el;
 
+    const polaroid = el.querySelector(".polaroid") as HTMLElement | null;
     const img = el.querySelector("img") as HTMLImageElement | null;
+
     if (img) {
       let candidateIndex = 0;
       img.onerror = () => {
@@ -149,11 +173,20 @@ function PhotoMarker({ map, config, visible }: PhotoMarkerProps) {
       };
       img.onload = () => {
         resolvedSrcRef.current = img.src;
+        if (polaroid && img.naturalWidth && img.naturalHeight) {
+          polaroid.classList.toggle(
+            "portrait",
+            img.naturalHeight > img.naturalWidth,
+          );
+          polaroid.classList.toggle(
+            "landscape",
+            img.naturalWidth > img.naturalHeight,
+          );
+        }
       };
       img.src = config.candidates[0] ?? "";
     }
 
-    const polaroid = el.querySelector(".polaroid") as HTMLElement | null;
     if (polaroid) {
       polaroid.addEventListener("click", (e) => {
         e.stopPropagation();
