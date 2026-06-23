@@ -202,6 +202,13 @@
     display: none !important;
   }
 
+  .amap-logo,
+  .amap-copyright,
+  [class*="amap-logo"],
+  [class*="amap-copyright"] {
+    z-index: 1 !important;
+  }
+
   .polaroid-marker {
     position: absolute;
     opacity: 0;

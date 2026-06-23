@@ -41,13 +41,13 @@ export function PhotoPreview() {
         <X className="h-5 w-5" />
       </button>
       <div
-        className="relative max-h-[85vh] max-w-[90vw] overflow-hidden rounded-lg bg-white p-2 shadow-2xl"
+        className="relative flex h-[90vh] w-[90vw] items-center justify-center overflow-hidden rounded-lg bg-white p-2 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <img
           src={preview.src}
           alt={`${preview.dayId} photo`}
-          className="max-h-[80vh] max-w-[85vw] object-contain"
+          className="max-h-full max-w-full object-contain"
         />
       </div>
     </div>
