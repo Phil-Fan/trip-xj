@@ -173,6 +173,9 @@ function PhotoMarker({ map, config, visible }: PhotoMarkerProps) {
       };
       img.onload = () => {
         resolvedSrcRef.current = img.src;
+        if (polaroid && img.naturalHeight > img.naturalWidth) {
+          polaroid.classList.add("portrait");
+        }
       };
       img.src = config.candidates[0] ?? "";
     }

@@ -240,6 +240,15 @@
       box-shadow 0.25s ease, opacity 0.25s ease;
   }
 
+  .polaroid.portrait {
+    width: 28px;
+    padding-bottom: 10px;
+  }
+
+  .polaroid.portrait img {
+    height: 36px;
+  }
+
   .polaroid:hover {
     --lift: -3px;
     transform: rotate(0deg) scale(calc(var(--scale, 1) * 1.1))
