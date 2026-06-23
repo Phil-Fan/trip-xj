@@ -30,24 +30,28 @@ export function PhotoPreview() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6 backdrop-blur-sm"
       onClick={closePhotoPreview}
     >
-      <button
-        onClick={closePhotoPreview}
-        className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
-        aria-label="Close preview"
-      >
-        <X className="h-5 w-5" />
-      </button>
       <div
-        className="relative rounded-lg bg-white p-2 shadow-2xl"
+        className="relative max-h-[80vh] max-w-[85vw] rounded-sm bg-[#fdfbf7] p-3 pb-10 shadow-2xl"
+        style={{
+          boxShadow:
+            "0 1px 2px rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.15), 0 24px 48px rgba(0,0,0,0.18)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          onClick={closePhotoPreview}
+          className="absolute -top-3 -right-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white text-foreground shadow-md transition-colors hover:bg-muted"
+          aria-label="Close preview"
+        >
+          <X className="h-4 w-4" />
+        </button>
         <img
           src={preview.src}
           alt={`${preview.dayId} photo`}
-          className="max-h-[80vh] max-w-[80vw] object-contain"
+          className="max-h-[65vh] max-w-[75vw] object-contain"
         />
       </div>
     </div>
