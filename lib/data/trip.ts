@@ -49,6 +49,7 @@ const WAYPOINTS: Record<string, [number, number]> = {
   精河县: [82.894, 44.607],
   赛里木湖: [81.172193, 44.604112],
   果子沟: [81.167568, 44.459601],
+  果子沟大桥: [81.140191, 44.475984],
   霍城: [80.872, 44.053],
   伊宁市: [81.277715, 43.908021],
   薰衣草园: [80.900097, 44.276581],
@@ -374,6 +375,7 @@ export const trip: Trip = {
       ],
       [
         { name: "赛里木湖", coordinates: W["赛里木湖"], type: "scenic" },
+        { name: "果子沟大桥", coordinates: W["果子沟大桥"], type: "scenic" },
         { name: "伊宁市", coordinates: W["伊宁市"], type: "end" },
       ],
     ),
