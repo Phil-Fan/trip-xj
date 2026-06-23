@@ -4,6 +4,8 @@ import AMapLoader from "@amap/amap-jsapi-loader";
 import { useEffect, useRef, useState } from "react";
 import { trip, type Day } from "@/lib/data/trip";
 import { useTripStore } from "@/lib/store/trip-store";
+import { RoutePhotos } from "@/components/day-photos";
+import { PhotoPreview } from "@/components/photo-preview";
 
 const MAP_CENTER: [number, number] = [87.6168, 43.8256];
 const MAP_ZOOM = 6;
@@ -362,42 +364,14 @@ function formatElapsedTime(minutes: number): string {
 }
 
 function CarInfoOverlay() {
-  const map = useTripStore((state) => state.map);
   const activeDayId = useTripStore((state) => state.activeDayId);
   const hoveredDayId = useTripStore((state) => state.hoveredDayId);
   const carProgress = useTripStore((state) => state.carProgress);
-  const [screenPos, setScreenPos] = useState<{ x: number; y: number } | null>(
-    null,
-  );
 
   const targetId = activeDayId || hoveredDayId;
   const day = targetId ? trip.days.find((d) => d.id === targetId) : null;
 
-  useEffect(() => {
-    if (!map || !day || day.coordinates.length < 2) {
-      setScreenPos(null);
-      return;
-    }
-
-    function updatePosition() {
-      if (!map || !day) return;
-      const pixel = map.lngLatToContainer(
-        new AMap.LngLat(day.startCoordinates[0], day.startCoordinates[1]),
-      );
-      setScreenPos({ x: pixel.getX(), y: pixel.getY() });
-    }
-
-    updatePosition();
-    map.on("move", updatePosition);
-    map.on("zoom", updatePosition);
-
-    return () => {
-      map.off("move", updatePosition);
-      map.off("zoom", updatePosition);
-    };
-  }, [map, day]);
-
-  if (!day || day.coordinates.length < 2 || !screenPos) return null;
+  if (!day || day.coordinates.length < 2) return null;
 
   const progress =
     carProgress?.dayId === day.id
@@ -405,14 +379,7 @@ function CarInfoOverlay() {
       : { distanceKm: 0, elapsedMin: 0 };
 
   return (
-    <div
-      className="pointer-events-none absolute z-10 rounded-lg border border-border/60 bg-background/85 px-3 py-2 text-xs shadow-md backdrop-blur-sm"
-      style={{
-        left: screenPos.x + 12,
-        top: screenPos.y - 12,
-        transform: "translateY(-100%)",
-      }}
-    >
+    <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-lg border border-border/60 bg-background/85 px-3 py-2 text-xs shadow-md backdrop-blur-sm">
       <div className="font-semibold text-foreground">{day.id} 行程进度</div>
       <div className="mt-1 space-y-0.5 text-muted-foreground">
         <div>已行驶: {progress.distanceKm.toFixed(1)} km</div>
@@ -506,11 +473,13 @@ export default function MapView() {
     <div ref={containerRef} className="relative h-full w-full">
       <CarInfoOverlay />
       <HelpHint />
+      <PhotoPreview />
       {map && (
         <>
           <RoutePolylines map={map} />
           <DayMarkers map={map} />
           <CarMarker map={map} />
+          <RoutePhotos map={map} />
         </>
       )}
     </div>

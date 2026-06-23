@@ -7,12 +7,18 @@ export interface CarProgress {
   distanceKm: number;
 }
 
+export interface PhotoPreview {
+  src: string;
+  dayId: string;
+}
+
 interface TripState {
   activeDayId: string | null;
   hoveredDayId: string | null;
   selectedRoute: string | null;
   map: AMap.Map | null;
   carProgress: CarProgress | null;
+  photoPreview: PhotoPreview | null;
 }
 
 interface TripActions {
@@ -21,6 +27,8 @@ interface TripActions {
   setSelectedRoute: (id: string | null) => void;
   setMap: (map: AMap.Map | null) => void;
   setCarProgress: (progress: CarProgress | null) => void;
+  openPhotoPreview: (preview: PhotoPreview) => void;
+  closePhotoPreview: () => void;
   clearSelection: () => void;
   fitToDay: (id: string) => void;
 }
@@ -33,6 +41,7 @@ export const useTripStore = create<TripStore>((set, get) => ({
   selectedRoute: null,
   map: null,
   carProgress: null,
+  photoPreview: null,
 
   setActiveDay: (id) => {
     set({ activeDayId: id });
@@ -57,12 +66,21 @@ export const useTripStore = create<TripStore>((set, get) => ({
     set({ carProgress: progress });
   },
 
+  openPhotoPreview: (preview) => {
+    set({ photoPreview: preview });
+  },
+
+  closePhotoPreview: () => {
+    set({ photoPreview: null });
+  },
+
   clearSelection: () => {
     set({
       activeDayId: null,
       hoveredDayId: null,
       selectedRoute: null,
       carProgress: null,
+      photoPreview: null,
     });
   },
 
