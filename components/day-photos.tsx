@@ -30,7 +30,7 @@ interface PhotoConfig {
   rotation: number;
   scale: number;
   zIndex: number;
-  src: string;
+  candidates: string[];
   dayId: string;
 }
 
@@ -38,7 +38,7 @@ function makeConfig(
   day: Day,
   seedBase: number,
   position: AMap.LngLat,
-  src: string,
+  candidates: string[],
   zIndex: number,
 ): PhotoConfig {
   const offsetLng = (pseudoRandom(seedBase) - 0.5) * 0.12;
@@ -54,7 +54,7 @@ function makeConfig(
     rotation,
     scale,
     zIndex,
-    src,
+    candidates,
     dayId: day.id,
   };
 }
@@ -65,6 +65,15 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
   const configs: PhotoConfig[] = [];
   const total = day.coordinates.length;
   const baseCount = getBasePhotoCount(day.distanceKm);
+
+  function photoCandidates(stem: string): string[] {
+    return [
+      `/photos/${stem}.jpg`,
+      `/photos/${stem}.jpeg`,
+      `/photos/${stem}.png`,
+      `/photos/${stem}.svg`,
+    ];
+  }
 
   // Base route accent photos
   for (let i = 0; i < baseCount; i++) {
@@ -77,7 +86,7 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
         day,
         seedBase,
         new AMap.LngLat(lng, lat),
-        `/photos/${day.id}-${i + 1}.svg`,
+        photoCandidates(`${day.id}-${i + 1}`),
         50 + i,
       ),
     );
@@ -97,7 +106,7 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
           day,
           seedBase,
           new AMap.LngLat(point.coordinates[0], point.coordinates[1]),
-          `/photos/${day.id}-point-${((index + j) % 5) + 1}.svg`,
+          photoCandidates(`${day.id}-point-${((index + j) % 5) + 1}`),
           70 + index * 3 + j,
         ),
       );
@@ -116,6 +125,7 @@ interface PhotoMarkerProps {
 function PhotoMarker({ map, config, visible }: PhotoMarkerProps) {
   const markerRef = useRef<AMap.Marker | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const resolvedSrcRef = useRef<string>(config.candidates[0] ?? "");
 
   useEffect(() => {
     const el = document.createElement("div");
@@ -123,17 +133,32 @@ function PhotoMarker({ map, config, visible }: PhotoMarkerProps) {
     el.innerHTML = `
       <div class="polaroid" style="--rotation:${config.rotation.toFixed(2)}deg;--scale:${config.scale.toFixed(3)};z-index:${config.zIndex}">
         <div class="pin"></div>
-        <img src="${config.src}" alt="" draggable="false" />
+        <img src="" alt="" draggable="false" />
       </div>
     `;
     containerRef.current = el;
+
+    const img = el.querySelector("img") as HTMLImageElement | null;
+    if (img) {
+      let candidateIndex = 0;
+      img.onerror = () => {
+        candidateIndex++;
+        if (candidateIndex < config.candidates.length) {
+          img.src = config.candidates[candidateIndex];
+        }
+      };
+      img.onload = () => {
+        resolvedSrcRef.current = img.src;
+      };
+      img.src = config.candidates[0] ?? "";
+    }
 
     const polaroid = el.querySelector(".polaroid") as HTMLElement | null;
     if (polaroid) {
       polaroid.addEventListener("click", (e) => {
         e.stopPropagation();
         useTripStore.getState().openPhotoPreview({
-          src: config.src,
+          src: resolvedSrcRef.current,
           dayId: config.dayId,
         });
       });
