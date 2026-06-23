@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { trip, type Day, type Point } from "@/lib/data/trip";
 import { useTripStore } from "@/lib/store/trip-store";
+import photoLocations from "@/public/photos/photo-locations.json";
 
 function hash(str: string): number {
   let h = 0;
@@ -88,10 +89,16 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
 
   // Base route accent photos
   for (let i = 0; i < baseCount; i++) {
+    const photoKey = `${day.id}-${i + 1}`;
+    const realLocation = (
+      photoLocations as unknown as Record<string, [number, number]>
+    )[photoKey];
     const anchor = BASE_ANCHORS[day.id]?.[i];
 
     let position: AMap.LngLat;
-    if (typeof anchor === "string") {
+    if (realLocation) {
+      position = new AMap.LngLat(realLocation[0], realLocation[1]);
+    } else if (typeof anchor === "string") {
       const anchorPoint = findPoint(day, anchor);
       position = anchorPoint
         ? new AMap.LngLat(
@@ -114,7 +121,7 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
         day,
         seedBase,
         position,
-        photoCandidates(`${day.id}-${i + 1}`),
+        photoCandidates(photoKey),
         50 + i,
       ),
     );
