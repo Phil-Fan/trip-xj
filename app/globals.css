@@ -237,17 +237,7 @@
       translateY(var(--lift, 0px));
     transform-origin: center bottom;
     transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.25s ease, opacity 0.25s ease, width 0.2s ease;
-  }
-
-  .polaroid.portrait {
-    width: 30px;
-    padding-bottom: 10px;
-  }
-
-  .polaroid.landscape {
-    width: 48px;
-    padding-bottom: 6px;
+      box-shadow 0.25s ease, opacity 0.25s ease;
   }
 
   .polaroid:hover {
@@ -269,15 +259,6 @@
     object-fit: contain;
     border-radius: 0.5px;
     background: #e5e5e5;
-    transition: height 0.2s ease;
-  }
-
-  .polaroid.portrait img {
-    height: 38px;
-  }
-
-  .polaroid.landscape img {
-    height: 26px;
   }
 
   .polaroid .pin {
