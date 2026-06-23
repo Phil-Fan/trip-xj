@@ -41,6 +41,13 @@ export default function DaySidebar() {
     }
   }, [activeDayId]);
 
+  useEffect(() => {
+    const handleResize = () => setOpen(window.innerWidth >= 1024);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <>
       {!open && (
