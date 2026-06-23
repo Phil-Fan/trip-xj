@@ -25,9 +25,11 @@ function getBasePhotoCount(distanceKm: number): number {
   return 5;
 }
 
-// Anchor specific base photos to a named point so they cluster around it.
-const BASE_ANCHORS: Record<string, Record<number, string>> = {
-  D2: { 2: "天山天池", 3: "天山天池" },
+// Anchor specific base photos to a named point or raw coordinates.
+type Anchor = string | [number, number];
+
+const BASE_ANCHORS: Record<string, Record<number, Anchor>> = {
+  D2: { 1: [87.4, 45.2], 2: "天山天池", 3: "天山天池" },
 };
 
 interface PhotoConfig {
@@ -86,15 +88,19 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
 
   // Base route accent photos
   for (let i = 0; i < baseCount; i++) {
-    const anchorName = BASE_ANCHORS[day.id]?.[i];
-    const anchorPoint = anchorName ? findPoint(day, anchorName) : null;
+    const anchor = BASE_ANCHORS[day.id]?.[i];
 
     let position: AMap.LngLat;
-    if (anchorPoint) {
-      position = new AMap.LngLat(
-        anchorPoint.coordinates[0],
-        anchorPoint.coordinates[1],
-      );
+    if (typeof anchor === "string") {
+      const anchorPoint = findPoint(day, anchor);
+      position = anchorPoint
+        ? new AMap.LngLat(
+            anchorPoint.coordinates[0],
+            anchorPoint.coordinates[1],
+          )
+        : new AMap.LngLat(day.coordinates[0][0], day.coordinates[0][1]);
+    } else if (Array.isArray(anchor)) {
+      position = new AMap.LngLat(anchor[0], anchor[1]);
     } else {
       const t = (i + 1) / (baseCount + 1);
       const idx = Math.min(total - 1, Math.floor(t * (total - 1)));
