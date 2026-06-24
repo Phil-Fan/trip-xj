@@ -31,6 +31,17 @@ type Anchor = string | [number, number];
 
 const BASE_ANCHORS: Record<string, Record<number, Anchor>> = {
   D2: { 1: [87.4, 45.2], 2: "天山天池", 3: "天山天池" },
+  D7: { 4: "赛里木湖" },
+};
+
+// Extra point photo filenames to place at a specific named point or raw coordinates.
+interface ExtraPointPhoto {
+  stem: string;
+  anchor: Anchor;
+}
+
+const EXTRA_POINT_PHOTOS: Record<string, ExtraPointPhoto[]> = {
+  D5: [{ stem: "D5-point-5", anchor: [84.88, 44.37] }],
 };
 
 interface PhotoConfig {
@@ -71,11 +82,53 @@ function findPoint(day: Day, name: string): Point | undefined {
   return day.points.find((p) => p.name === name);
 }
 
+function findClosestIndex(
+  coordinates: [number, number][],
+  target: [number, number],
+): number {
+  let bestIdx = 0;
+  let bestDist = Infinity;
+  coordinates.forEach(([lng, lat], idx) => {
+    const d = (lng - target[0]) ** 2 + (lat - target[1]) ** 2;
+    if (d < bestDist) {
+      bestDist = d;
+      bestIdx = idx;
+    }
+  });
+  return bestIdx;
+}
+
+// Days that should not render any photo cards.
+const HIDDEN_DAY_PHOTOS = new Set<string>([]);
+
+// Days whose base route accent photos should be skipped.
+const SKIP_BASE_PHOTO_DAYS = new Set(["D6"]);
+
+// Restrict base photo placement to a sub-segment of the day's route.
+const BASE_PHOTO_SEGMENTS: Record<
+  string,
+  { from: [number, number]; to: [number, number] }
+> = {};
+
+// Point names to skip when generating extra point photos.
+const SKIP_POINT_NAMES: Record<string, string[]> = {
+  D6: ["乌鲁木齐会展中心"],
+};
+
 function getPhotoConfigs(day: Day): PhotoConfig[] {
-  if (day.coordinates.length < 2) return [];
+  if (day.coordinates.length < 2 || HIDDEN_DAY_PHOTOS.has(day.id)) return [];
 
   const configs: PhotoConfig[] = [];
-  const total = day.coordinates.length;
+
+  const segment = BASE_PHOTO_SEGMENTS[day.id];
+  const routeCoords = segment
+    ? day.coordinates.slice(
+        findClosestIndex(day.coordinates, segment.from),
+        findClosestIndex(day.coordinates, segment.to) + 1,
+      )
+    : day.coordinates;
+
+  const total = routeCoords.length;
   const baseCount = getBasePhotoCount(day.distanceKm);
 
   function photoCandidates(stem: string): string[] {
@@ -88,65 +141,114 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
   }
 
   // Base route accent photos
-  for (let i = 0; i < baseCount; i++) {
-    const photoKey = `${day.id}-${i + 1}`;
-    const realLocation = (
-      photoLocations as unknown as Record<string, [number, number]>
-    )[photoKey];
-    const anchor = BASE_ANCHORS[day.id]?.[i];
+  if (!SKIP_BASE_PHOTO_DAYS.has(day.id)) {
+    for (let i = 0; i < baseCount; i++) {
+      const photoKey = `${day.id}-${i + 1}`;
+      const realLocation = (
+        photoLocations as unknown as Record<string, [number, number]>
+      )[photoKey];
+      const anchor = BASE_ANCHORS[day.id]?.[i];
 
-    let position: AMap.LngLat;
-    if (realLocation) {
-      position = new AMap.LngLat(realLocation[0], realLocation[1]);
-    } else if (typeof anchor === "string") {
-      const anchorPoint = findPoint(day, anchor);
-      position = anchorPoint
-        ? new AMap.LngLat(
-            anchorPoint.coordinates[0],
-            anchorPoint.coordinates[1],
-          )
-        : new AMap.LngLat(day.coordinates[0][0], day.coordinates[0][1]);
-    } else if (Array.isArray(anchor)) {
-      position = new AMap.LngLat(anchor[0], anchor[1]);
-    } else {
-      const t = (i + 1) / (baseCount + 1);
-      const idx = Math.min(total - 1, Math.floor(t * (total - 1)));
-      const [lng, lat] = day.coordinates[idx];
-      position = new AMap.LngLat(lng, lat);
+      let position: AMap.LngLat;
+      if (realLocation) {
+        position = new AMap.LngLat(realLocation[0], realLocation[1]);
+      } else if (typeof anchor === "string") {
+        const anchorPoint = findPoint(day, anchor);
+        position = anchorPoint
+          ? new AMap.LngLat(
+              anchorPoint.coordinates[0],
+              anchorPoint.coordinates[1],
+            )
+          : new AMap.LngLat(day.coordinates[0][0], day.coordinates[0][1]);
+      } else if (Array.isArray(anchor)) {
+        position = new AMap.LngLat(anchor[0], anchor[1]);
+      } else {
+        const t = (i + 1) / (baseCount + 1);
+        const idx = Math.min(total - 1, Math.floor(t * (total - 1)));
+        const [lng, lat] = routeCoords[idx];
+        position = new AMap.LngLat(lng, lat);
+      }
+
+      const seedBase = hash(`${day.id}-photo-${i}`);
+      configs.push(
+        makeConfig(
+          day,
+          seedBase,
+          position,
+          photoCandidates(photoKey),
+          50 + i,
+        ),
+      );
     }
-
-    const seedBase = hash(`${day.id}-photo-${i}`);
-    configs.push(
-      makeConfig(
-        day,
-        seedBase,
-        position,
-        photoCandidates(photoKey),
-        50 + i,
-      ),
-    );
   }
 
+  // Scenic spots that deserve more than one point photo, optionally with
+  // per-photo anchors to spread them around a large area.
+  const POINT_PHOTO_OVERRIDES: Record<string, (string | [number, number])[]> = {
+    夏塔: ["夏塔", "夏塔", "夏塔"],
+    赛里木湖: [
+      [81.2, 44.62],
+      [81.17, 44.604],
+      [81.13, 44.58],
+    ],
+    薰衣草园: [
+      [80.898, 44.278],
+      [80.902, 44.28],
+      [80.904, 44.274],
+    ],
+  };
+
   // Extra photos around scenic/end points
+  const skippedPointNames = new Set(SKIP_POINT_NAMES[day.id] ?? []);
   const interestingPoints = day.points.filter(
     (p): p is Point & { type: "scenic" | "end" } =>
-      p.type === "scenic" || p.type === "end",
+      (p.type === "scenic" || p.type === "end") && !skippedPointNames.has(p.name),
   );
+  let pointPhotoNumber = 1;
   interestingPoints.forEach((point, index) => {
-    const extraCount = point.name === "夏塔" ? 3 : 1;
-    for (let j = 0; j < extraCount; j++) {
+    const anchors = POINT_PHOTO_OVERRIDES[point.name] ?? [point.name];
+    anchors.forEach((anchor, j) => {
+      let position: AMap.LngLat;
+      if (typeof anchor === "string") {
+        const anchorPoint = findPoint(day, anchor);
+        position = anchorPoint
+          ? new AMap.LngLat(anchorPoint.coordinates[0], anchorPoint.coordinates[1])
+          : new AMap.LngLat(point.coordinates[0], point.coordinates[1]);
+      } else {
+        position = new AMap.LngLat(anchor[0], anchor[1]);
+      }
       const seedBase = hash(`${day.id}-point-${point.name}-${index}-${j}`);
       configs.push(
         makeConfig(
           day,
           seedBase,
-          new AMap.LngLat(point.coordinates[0], point.coordinates[1]),
-          photoCandidates(`${day.id}-point-${((index + j) % 5) + 1}`),
+          position,
+          photoCandidates(`${day.id}-point-${pointPhotoNumber++}`),
           70 + index * 3 + j,
         ),
       );
-    }
+    });
   });
+
+  // Additional manual point photo placements
+  const manualPhotos = EXTRA_POINT_PHOTOS[day.id];
+  if (manualPhotos) {
+    manualPhotos.forEach(({ stem, anchor }, overrideIndex) => {
+      let position: AMap.LngLat;
+      if (typeof anchor === "string") {
+        const point = findPoint(day, anchor);
+        position = point
+          ? new AMap.LngLat(point.coordinates[0], point.coordinates[1])
+          : new AMap.LngLat(day.coordinates[0][0], day.coordinates[0][1]);
+      } else {
+        position = new AMap.LngLat(anchor[0], anchor[1]);
+      }
+      const seedBase = hash(`${day.id}-point-override-${stem}`);
+      configs.push(
+        makeConfig(day, seedBase, position, photoCandidates(stem), 85 + overrideIndex),
+      );
+    });
+  }
 
   return configs;
 }
