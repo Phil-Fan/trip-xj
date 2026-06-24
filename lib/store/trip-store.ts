@@ -35,7 +35,7 @@ interface TripActions {
   fitToDay: (id: string) => void;
   startPlayback: () => void;
   stopPlayback: () => void;
-  enterGlobalPreview: () => void;
+  toggleShowAllRoutesAndPhotos: () => void;
   nextPlaybackDay: () => void;
 }
 
@@ -149,13 +149,13 @@ export const useTripStore = create<TripStore>((set, get) => ({
     set({ isPlaying: false });
   },
 
-  enterGlobalPreview: () => {
-    set({
-      showAllRoutesAndPhotos: true,
-      activeDayId: null,
-      hoveredDayId: null,
+  toggleShowAllRoutesAndPhotos: () => {
+    set((state) => ({
+      showAllRoutesAndPhotos: !state.showAllRoutesAndPhotos,
+      activeDayId: state.showAllRoutesAndPhotos ? state.activeDayId : null,
+      hoveredDayId: state.showAllRoutesAndPhotos ? state.hoveredDayId : null,
       isPlaying: false,
-    });
+    }));
   },
 
   nextPlaybackDay: () => {

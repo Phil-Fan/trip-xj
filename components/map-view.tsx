@@ -407,6 +407,7 @@ function MapHints() {
           路线颜色按照当日 Dress Code
         </div>
         <div className="space-y-0.5 text-muted-foreground">
+          <div>左上角 👁️ 按钮可以显示/隐藏图片</div>
           <div>
             <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">←</kbd>{" "}
             <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">→</kbd>{" "}
@@ -423,13 +424,13 @@ function ShowAllToggle() {
   const showAllRoutesAndPhotos = useTripStore(
     (state) => state.showAllRoutesAndPhotos,
   );
-  const enterGlobalPreview = useTripStore((state) => state.enterGlobalPreview);
+  const toggle = useTripStore((state) => state.toggleShowAllRoutesAndPhotos);
 
   return (
     <button
-      onClick={enterGlobalPreview}
-      title="进入全局预览模式"
-      className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      onClick={toggle}
+      title={showAllRoutesAndPhotos ? "隐藏所有照片" : "显示所有路线与照片"}
+      className="absolute top-3 left-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {showAllRoutesAndPhotos ? (
         <Eye className="h-4 w-4" />
