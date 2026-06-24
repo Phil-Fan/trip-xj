@@ -47,3 +47,9 @@ DX-N.jpeg
    ```
 5. 打开 `public/photos/photo-manifest.json`，把复制的内容粘贴进去，按序号排列。
 6. 重新运行 `pnpm dev` 或 `pnpm build` 即可看到新照片。
+
+## Prompt
+
+路图：
+
+照片墙：地图上拍立得风格的照片卡片，照片卡片略微旋转（-10度到+10度随机倾斜），通过金属图钉或订书钉固定在地图上，具有真实的物理压迫感与阴影层次。整体风格为旅行日记 + 剪贴簿拼贴风（scrapbook aesthetic），UI具有轻微3D深度层级效果
