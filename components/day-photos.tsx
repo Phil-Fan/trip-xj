@@ -29,7 +29,19 @@ function getBasePhotoCount(distanceKm: number): number {
 // Override the number of base route accent photos for specific days.
 const BASE_PHOTO_COUNTS: Record<string, number> = {
   D9: 3,
+  D10: 4,
   D11: 5,
+  D12: 5,
+};
+
+// Override the generated stem for a specific base photo index.
+const BASE_PHOTO_STEM_OVERRIDES: Record<string, Record<number, string>> = {
+  D12: {
+    2: "D12-3",
+    3: "D12-4",
+    4: "D12-5",
+    5: "D12-6",
+  },
 };
 
 // Anchor specific base photos to a named point or raw coordinates.
@@ -38,12 +50,18 @@ type Anchor = string | [number, number];
 const BASE_ANCHORS: Record<string, Record<number, Anchor>> = {
   D2: { 1: [87.4, 45.2], 2: "天山天池", 3: "天山天池" },
   D7: { 4: "赛里木湖" },
+  D10: { 4: "库尔德宁" },
   D11: {
     1: [82.11, 43.08],
     2: [82.09, 43.07],
     3: [82.07, 43.06],
     4: [82.05, 43.04],
     5: [82.03, 43.02],
+  },
+  D12: {
+    3: "百里画廊",
+    4: "独库公路中段",
+    5: "独库公路中段",
   },
 };
 
@@ -54,7 +72,10 @@ interface ExtraPointPhoto {
 }
 
 const EXTRA_POINT_PHOTOS: Record<string, ExtraPointPhoto[]> = {
-  D5: [{ stem: "D5-point-5", anchor: [84.88, 44.37] }],
+  D5: [
+    { stem: "D5-point-4", anchor: [85.733205, 46.155149] },
+    { stem: "D5-point-5", anchor: [84.88, 44.37] },
+  ],
 };
 
 interface PhotoConfig {
@@ -127,6 +148,7 @@ const BASE_PHOTO_SEGMENTS: Record<
 const SKIP_POINT_NAMES: Record<string, string[]> = {
   D6: ["乌鲁木齐会展中心"],
   D9: ["新源县"],
+  D11: ["喀拉峻"],
 };
 
 function getPhotoConfigs(day: Day): PhotoConfig[] {
@@ -157,11 +179,12 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
   // Base route accent photos
   if (!SKIP_BASE_PHOTO_DAYS.has(day.id)) {
     for (let i = 0; i < baseCount; i++) {
-      const photoKey = `${day.id}-${i + 1}`;
+      const photoKey =
+        BASE_PHOTO_STEM_OVERRIDES[day.id]?.[i + 1] ?? `${day.id}-${i + 1}`;
       const realLocation = (
         photoLocations as unknown as Record<string, [number, number]>
       )[photoKey];
-      const anchor = BASE_ANCHORS[day.id]?.[i];
+      const anchor = BASE_ANCHORS[day.id]?.[i + 1];
 
       let position: AMap.LngLat;
       if (realLocation) {
