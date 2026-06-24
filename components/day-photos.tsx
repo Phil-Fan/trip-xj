@@ -26,12 +26,25 @@ function getBasePhotoCount(distanceKm: number): number {
   return 5;
 }
 
+// Override the number of base route accent photos for specific days.
+const BASE_PHOTO_COUNTS: Record<string, number> = {
+  D9: 3,
+  D11: 5,
+};
+
 // Anchor specific base photos to a named point or raw coordinates.
 type Anchor = string | [number, number];
 
 const BASE_ANCHORS: Record<string, Record<number, Anchor>> = {
   D2: { 1: [87.4, 45.2], 2: "天山天池", 3: "天山天池" },
   D7: { 4: "赛里木湖" },
+  D11: {
+    1: [82.11, 43.08],
+    2: [82.09, 43.07],
+    3: [82.07, 43.06],
+    4: [82.05, 43.04],
+    5: [82.03, 43.02],
+  },
 };
 
 // Extra point photo filenames to place at a specific named point or raw coordinates.
@@ -113,6 +126,7 @@ const BASE_PHOTO_SEGMENTS: Record<
 // Point names to skip when generating extra point photos.
 const SKIP_POINT_NAMES: Record<string, string[]> = {
   D6: ["乌鲁木齐会展中心"],
+  D9: ["新源县"],
 };
 
 function getPhotoConfigs(day: Day): PhotoConfig[] {
@@ -129,7 +143,7 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
     : day.coordinates;
 
   const total = routeCoords.length;
-  const baseCount = getBasePhotoCount(day.distanceKm);
+  const baseCount = BASE_PHOTO_COUNTS[day.id] ?? getBasePhotoCount(day.distanceKm);
 
   function photoCandidates(stem: string): string[] {
     return [
@@ -185,7 +199,11 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
   // Scenic spots that deserve more than one point photo, optionally with
   // per-photo anchors to spread them around a large area.
   const POINT_PHOTO_OVERRIDES: Record<string, (string | [number, number])[]> = {
-    夏塔: ["夏塔", "夏塔", "夏塔"],
+    夏塔: [
+      [80.665, 42.6],
+      [80.668, 42.598],
+      [80.671, 42.595],
+    ],
     赛里木湖: [
       [81.2, 44.62],
       [81.17, 44.604],
@@ -195,6 +213,17 @@ function getPhotoConfigs(day: Day): PhotoConfig[] {
       [80.898, 44.278],
       [80.902, 44.28],
       [80.904, 44.274],
+    ],
+    六星街: [
+      [81.308, 43.934],
+      [81.31, 43.933],
+      [81.312, 43.932],
+      [81.311, 43.935],
+    ],
+    库尔德宁: [
+      "库尔德宁",
+      [82.75, 43.32],
+      [82.85, 43.38],
     ],
   };
 
@@ -339,9 +368,15 @@ function PhotoMarker({ map, config, visible }: PhotoMarkerProps) {
 function DayPhotos({ map, day }: { map: AMap.Map; day: Day }) {
   const activeDayId = useTripStore((state) => state.activeDayId);
   const hoveredDayId = useTripStore((state) => state.hoveredDayId);
+  const showAllRoutesAndPhotos = useTripStore(
+    (state) => state.showAllRoutesAndPhotos,
+  );
   const configs = useMemo(() => getPhotoConfigs(day), [day]);
 
-  const visible = activeDayId === day.id || hoveredDayId === day.id;
+  const visible =
+    showAllRoutesAndPhotos ||
+    activeDayId === day.id ||
+    hoveredDayId === day.id;
 
   if (configs.length === 0) return null;
 

@@ -6,6 +6,7 @@ import { trip, type Day } from "@/lib/data/trip";
 import { useTripStore } from "@/lib/store/trip-store";
 import { RoutePhotos } from "@/components/day-photos";
 import { PhotoPreview } from "@/components/photo-preview";
+import { Eye, EyeOff } from "lucide-react";
 
 const MAP_CENTER: [number, number] = [87.6168, 43.8256];
 const MAP_ZOOM = 6;
@@ -95,6 +96,9 @@ function createGradientPolylines(
 function RoutePolylines({ map }: { map: AMap.Map }) {
   const activeDayId = useTripStore((state) => state.activeDayId);
   const hoveredDayId = useTripStore((state) => state.hoveredDayId);
+  const showAllRoutesAndPhotos = useTripStore(
+    (state) => state.showAllRoutesAndPhotos,
+  );
   const setActiveDay = useTripStore((state) => state.setActiveDay);
   const setHoveredDay = useTripStore((state) => state.setHoveredDay);
   const polylinesRef = useRef<AMap.Polyline[]>([]);
@@ -119,17 +123,20 @@ function RoutePolylines({ map }: { map: AMap.Map }) {
       const isHovered = dayId === hoveredDayId;
       polyline.setOptions({
         strokeWeight: isActive ? 9 : isHovered ? 7 : 5,
-        strokeOpacity: isActive
-          ? 1
-          : isHovered
-            ? 0.85
-            : hasActive
+        strokeOpacity:
+          isActive || isHovered
+            ? isActive
+              ? 1
+              : 0.85
+            : hasActive || hoveredDayId
               ? 0.25
-              : 0.8,
+              : showAllRoutesAndPhotos
+                ? 0.85
+                : 0.8,
         zIndex: isActive ? 100 : isHovered ? 50 : 1,
       });
     });
-  }, [activeDayId, hoveredDayId]);
+  }, [activeDayId, hoveredDayId, showAllRoutesAndPhotos]);
 
   return null;
 }
@@ -392,18 +399,44 @@ function CarInfoOverlay() {
   );
 }
 
-function HelpHint() {
+function MapHints() {
   return (
     <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg border border-border/60 bg-background/85 px-3 py-2 text-xs shadow-md backdrop-blur-sm">
-      <div className="space-y-0.5 text-muted-foreground">
-        <div>
-          <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">←</kbd>{" "}
-          <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">→</kbd>{" "}
-          切换日期
+      <div className="space-y-1">
+        <div className="font-medium text-foreground">
+          路线颜色按照当日 Dress Code
         </div>
-        <div>Hover / 点击选择路线</div>
+        <div className="space-y-0.5 text-muted-foreground">
+          <div>
+            <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">←</kbd>{" "}
+            <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">→</kbd>{" "}
+            切换日期
+          </div>
+          <div>Hover / 点击选择路线</div>
+        </div>
       </div>
     </div>
+  );
+}
+
+function ShowAllToggle() {
+  const showAllRoutesAndPhotos = useTripStore(
+    (state) => state.showAllRoutesAndPhotos,
+  );
+  const enterGlobalPreview = useTripStore((state) => state.enterGlobalPreview);
+
+  return (
+    <button
+      onClick={enterGlobalPreview}
+      title="进入全局预览模式"
+      className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {showAllRoutesAndPhotos ? (
+        <Eye className="h-4 w-4" />
+      ) : (
+        <EyeOff className="h-4 w-4" />
+      )}
+    </button>
   );
 }
 
@@ -474,8 +507,9 @@ export default function MapView() {
 
   return (
     <div ref={containerRef} className="relative h-full w-full">
+      <ShowAllToggle />
       <CarInfoOverlay />
-      <HelpHint />
+      <MapHints />
       <PhotoPreview />
       {map && (
         <>
