@@ -6,6 +6,7 @@ import { trip, type Day } from "@/lib/data/trip";
 import { useTripStore } from "@/lib/store/trip-store";
 import { RoutePhotos } from "@/components/day-photos";
 import { PhotoPreview } from "@/components/photo-preview";
+import photoManifest from "@/public/photos/photo-manifest.json";
 import { Eye, EyeOff } from "lucide-react";
 
 const MAP_CENTER: [number, number] = [87.6168, 43.8256];
@@ -441,11 +442,31 @@ function ShowAllToggle() {
   );
 }
 
+function CopyFeedback({ message }: { message: string }) {
+  return (
+    <div className="pointer-events-none absolute top-12 left-1/2 z-20 -translate-x-1/2 rounded-lg border border-border/60 bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur-sm">
+      {message}
+    </div>
+  );
+}
+
+function getNextPhotoKey(dayId: string | null): string {
+  if (!dayId) return "D?-N";
+  const prefix = `${dayId}-`;
+  const existing = Object.keys(photoManifest)
+    .filter((key) => key.startsWith(prefix))
+    .map((key) => parseInt(key.slice(prefix.length), 10))
+    .filter((n) => !isNaN(n));
+  const next = existing.length > 0 ? Math.max(...existing) + 1 : 1;
+  return `${dayId}-${next}`;
+}
+
 export default function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMapState] = useState<AMap.Map | null>(null);
   const setStoreMap = useTripStore((state) => state.setMap);
   const [error, setError] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     let instance: AMap.Map | null = null;
@@ -479,8 +500,29 @@ export default function MapView() {
           showScale: false,
           keyboardEnable: false,
         });
-        setMapState(instance);
-        setStoreMap(instance);
+        if (!instance) return;
+        const mapInstance = instance;
+        setMapState(mapInstance);
+        setStoreMap(mapInstance);
+
+        mapInstance.on("rightclick", (e: { lnglat: AMap.LngLat }) => {
+          const lng = e.lnglat.getLng();
+          const lat = e.lnglat.getLat();
+          const { activeDayId, hoveredDayId } = useTripStore.getState();
+          const currentDayId = activeDayId || hoveredDayId;
+          const key = getNextPhotoKey(currentDayId);
+          const text = `  "${key}": [\n    ${lng},\n    ${lat}\n  ],`;
+          navigator.clipboard
+            .writeText(text)
+            .then(() => {
+              setCopyFeedback(`已复制坐标: ${lng.toFixed(4)}, ${lat.toFixed(4)}`);
+              window.setTimeout(() => setCopyFeedback(null), 2000);
+            })
+            .catch(() => {
+              setCopyFeedback("复制失败");
+              window.setTimeout(() => setCopyFeedback(null), 2000);
+            });
+        });
       })
       .catch((err: unknown) => {
         if (isMounted) {
@@ -507,8 +549,13 @@ export default function MapView() {
   }
 
   return (
-    <div ref={containerRef} className="relative h-full w-full">
+    <div
+      ref={containerRef}
+      className="relative h-full w-full"
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <ShowAllToggle />
+      {copyFeedback && <CopyFeedback message={copyFeedback} />}
       <CarInfoOverlay />
       <MapHints />
       <PhotoPreview />

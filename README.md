@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Xinjiang Self-Drive Route Visualization
 
 ## Getting Started
 
-First, run the development server:
+First, install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+```
+
+Then, run the development server:
+
+```bash
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 添加照片
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+照片通过 `public/photos/photo-manifest.json` 统一管理，不再需要修改代码。
 
-## Learn More
+### 命名规则
 
-To learn more about Next.js, take a look at the following resources:
+照片文件统一放在 `public/photos/`，命名格式为：
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+DX-N.jpeg
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `X`：日期编号，例如 `2` 表示 D2
+- `N`：当天照片的序号，从 1 开始连续编号
 
-## Deploy on Vercel
+例如：`D5-3.jpeg` 表示第 5 天的第 3 张照片。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 操作步骤
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. 把照片文件放入 `public/photos/`，例如 `D5-6.jpeg`。
+2. 在地图上选中对应日期（点击路线、时间轴或侧边栏）。
+3. 在想要放置照片的位置 **右键点击** 地图。
+4. 剪贴板会自动复制如下格式的坐标条目：如果已选中日期，`D?` 会自动替换为当天编号，`N` 会自动取当前最大序号 + 1；未选中日期时复制 `D?-N` 占位符。
+   ```json
+     "D5-6": [
+       84.9023,
+       44.4269
+     ],
+   ```
+5. 打开 `public/photos/photo-manifest.json`，把复制的内容粘贴进去，按序号排列。
+6. 重新运行 `pnpm dev` 或 `pnpm build` 即可看到新照片。
