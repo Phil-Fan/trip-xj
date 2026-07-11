@@ -18,7 +18,8 @@
 | 状态 | **Zustand 5**；局部订阅 **`useShallow`** | `lib/store/` |
 | 地图 | **mapcn** registry（`components.json` → `@mapcn`）+ 高德 loader | `@amap/amap-jsapi-loader` |
 | 路径别名 | `@/*` → `./*` | |
-| 质量 | ESLint 9 + `eslint-config-next` | `pnpm lint` |
+| 质量 | ESLint 9 + `eslint-config-next`；**pre-commit** | `pnpm lint` |
+| CI | `.github/workflows/check.yml` | `pnpm lint` + pre-commit |
 | 媒体 | 照片 + **`photo-manifest.json`** 数据驱动 | `public/photos/` |
 
 **硬性约定**
@@ -61,7 +62,35 @@ pnpm install
 pnpm dev
 pnpm build
 pnpm lint
+pre-commit run --all-files
 ```
+
+### 提交前质量检查（强制）
+
+```bash
+pre-commit install
+pnpm lint
+pre-commit run --all-files         # pnpm exec eslint（app/components/lib）
+```
+
+| 检查 | 工具 | 说明 |
+|------|------|------|
+| ESLint | `eslint.config.mjs` | 忽略 `dist/`、`.next/`、`scripts/` 等构建产物 |
+| CI | Quality Check | push/PR → `main` |
+
+勿默认 `--no-verify`。
+
+## 6.1 目录文档同步（强制）
+
+**更改本仓库目录/模块时，必须同步更新下列「目录文件」：**
+
+| 变更 | 必更文件 |
+|------|----------|
+| 增删 `app/` / `components/` / `lib/` / `public/photos` 结构 | 本文件 **「目录结构」** |
+| 照片清单 | `public/photos/photo-manifest.json` + README 照片说明 |
+| 工作区级说明 | 上级 `websites/AGENTS.md`（若适用） |
+
+未更新目录文件即视为改动未完成。
 
 ## 7. Conventional Commits（必须）
 
@@ -100,4 +129,4 @@ perf(store): select day state with useShallow
 ## 8. Agent 原则
 
 - 改地图状态同步逻辑时先读 Zustand store 与现有订阅方式。
-- 最小改动；提交前 `pnpm lint`，涉及渲染/构建时 `pnpm build`。
+- 最小改动；**提交前必须** `pnpm lint` / pre-commit；涉及渲染/构建时 `pnpm build`。

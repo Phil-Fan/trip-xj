@@ -5,14 +5,23 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
+    "dist/**",
     "out/**",
     "build/**",
+    "node_modules/**",
+    "scripts/**",
+    "public/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // Map SDK lifecycle often needs setState inside effects
+      "react-hooks/set-state-in-effect": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

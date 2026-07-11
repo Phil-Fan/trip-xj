@@ -1,0 +1,12 @@
+# TypeScript / Next.js
+# Note: mirrors-eslint 与 eslint-config-next 的 rushstack patch 冲突，改用本地 pnpm 环境
+repos:
+  - repo: local
+    hooks:
+      - id: eslint
+        name: lint
+        entry: pnpm exec eslint
+        language: system
+        files: ^(app|components|lib)/.*\.(js|jsx|ts|tsx|mjs)$
+        types: [file]
+        pass_filenames: true
